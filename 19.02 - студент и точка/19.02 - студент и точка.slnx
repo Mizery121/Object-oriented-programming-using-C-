@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="19.02 - студент и точка/19.02 - студент и точка.vcxproj" />
+</Solution>
