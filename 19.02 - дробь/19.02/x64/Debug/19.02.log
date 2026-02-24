@@ -1,0 +1,4 @@
+﻿  19.02.cpp
+C:\Users\somewhere\source\repos\19.02\19.02\19.02.cpp(108,26): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\somewhere\source\repos\19.02\19.02\19.02.cpp(109,28): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+  19.02.vcxproj -> C:\Users\somewhere\source\repos\19.02\x64\Debug\19.02.exe
