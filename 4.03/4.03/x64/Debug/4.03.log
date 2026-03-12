@@ -1,0 +1,3 @@
+﻿  4.03.cpp
+C:\Users\somewhere\source\repos\4.03\4.03\4.03.cpp(119,23): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+  4.03.vcxproj -> C:\Users\somewhere\source\repos\4.03\x64\Debug\4.03.exe
