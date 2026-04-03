@@ -1,92 +1,63 @@
 ﻿#include <iostream>
-#include <string>
-#include <fstream>
+#include <thread>
+#include <chrono>
+#include <clocale>
 
 using namespace std;
 
-// ЗАДАНИЕ 1
-namespace Geometry {
-    const double PI = 3.14159;
+// Класс-обёртка для потока с автоматическим join в деструкторе
+class ThreadGuard {
+public:
+    // Запрещаем копирование
+    ThreadGuard(const ThreadGuard&) = delete;
+    ThreadGuard& operator=(const ThreadGuard&) = delete;
 
-    double circleArea(double radius) {
-        return PI * radius * radius;
+    // Конструктор: принимает вызываемый объект и его аргументы, запускает поток
+    template<typename Callable, typename... Args>
+    explicit ThreadGuard(Callable&& f, Args&&... args)
+        : t(forward<Callable>(f), forward<Args>(args)...) {
     }
 
-    double rectangleArea(double width, double height) {
-        return width * height;
+    // Деструктор: дожидаемся завершения потока, если он ещё присоединяем
+    ~ThreadGuard() {
+        if (t.joinable()) {
+            t.join();
+        }
     }
 
-    namespace Shapes {
-        class Circle {
-        private:
-            double radius;
-        public:
-            Circle(double r) : radius(r) {}
-            double area() const {
-                return Geometry::circleArea(radius);
-            }
-        };
-    }
+private:
+    thread t;
+};
+
+// Пример функции для потока с задержкой
+void slowFunction(int id, int delay_ms) {
+    this_thread::sleep_for(chrono::milliseconds(delay_ms));
+    cout << "Поток " << id << " завершился после задержки " << delay_ms << " мс\n";
 }
 
-// ЗАДАНИЕ 2
-namespace Logger {
-    enum LogLevel { INFO, WARNING, ERROR };
-
-    void log(LogLevel level, const string& message) {
-        switch (level) {
-        case INFO:    cout << "[INFO] "; break;
-        case WARNING: cout << "[WARNING] "; break;
-        case ERROR:   cout << "[ERROR] "; break;
-        }
-        cout << message << endl;
-    }
-
-    namespace FileLogger {
-        void logToFile(const string& filename, const string& message) {
-            ofstream file(filename, ios::app);
-            if (file.is_open()) {
-                file << message << endl;
-                file.close();
-            }
-            else {
-                cerr << "Не удалось открыть файл: " << filename << endl;
-            }
-        }
-    }
+// Пример быстрой функции
+void fastFunction(int id) {
+    cout << "Быстрый поток " << id << " выполнился\n";
 }
 
 int main() {
     setlocale(LC_ALL, "ru");
+    cout << "Запуск демонстрации ThreadGuard\n";
 
-    cout << "========== ЗАДАНИЕ 1 ==========\n";
+    {
+        // Первый поток с задержкой 500 мс
+        ThreadGuard t1(slowFunction, 1, 500);
+        // Второй быстрый поток
+        ThreadGuard t2(fastFunction, 2);
 
-    // 1. Полная квалификация
-    cout << "Площадь круга (радиус 5): " << Geometry::circleArea(5) << endl;
-    cout << "Площадь прямоугольника (4x6): " << Geometry::rectangleArea(4, 6) << endl;
+        // Ещё один поток с лямбдой
+        ThreadGuard t3([]() {
+            cout << "Лямбда-поток выполнился\n";
+            });
 
-    // 2. Using-объявление для одной функции
-    using Geometry::rectangleArea;
-    cout << "Площадь прямоугольника (через using): " << rectangleArea(3, 7) << endl;
+        cout << "Все потоки запущены, выходим из области видимости...\n";
+    } // Здесь деструкторы t1, t2, t3 вызовут join()
 
-    // 3. Использование вложенного класса
-    Geometry::Shapes::Circle c(3);
-    cout << "Площадь круга через класс Circle: " << c.area() << endl;
-
-    using namespace Geometry;
-    cout << "Ещё одна площадь круга (через using namespace): " << circleArea(2) << endl;
-
-    cout << "\n========== ЗАДАНИЕ 2 ==========\n";
-
-    using namespace Logger;
-
-    log(INFO, "Программа запущена");
-    log(WARNING, "Баланс на исходе");
-    log(ERROR, "Критическая ошибка");
-
-    // Вызов функции из вложенного пространства
-    FileLogger::logToFile("log.txt", "Это сообщение записано в файл");
-    cout << "Сообщение записано в файл log.txt" << endl;
-
+    cout << "Все потоки завершены, программа завершается.\n";
     return 0;
 }
