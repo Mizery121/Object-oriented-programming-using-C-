@@ -1,130 +1,92 @@
 ﻿#include <iostream>
-#include <stdexcept>
 #include <string>
+#include <fstream>
 
 using namespace std;
 
 // ЗАДАНИЕ 1
-class BankAccount {
-private:
-    string ownerName;
-    double balance;
+namespace Geometry {
+    const double PI = 3.14159;
 
-public:
-    // Конструктор: выбрасывает invalid_argument, если начальный баланс отрицательный
-    BankAccount(const string& name, double initialBalance)
-        : ownerName(name), balance(initialBalance) {
-        if (initialBalance < 0) {
-            throw invalid_argument("Ошибка: начальный баланс не может быть отрицательным!");
-        }
+    double circleArea(double radius) {
+        return PI * radius * radius;
     }
 
-    // Метод снятия денег
-    void withdraw(double amount) {
-        if (amount < 0) {
-            throw invalid_argument("Ошибка: сумма снятия не может быть отрицательной!");
-        }
-        if (amount > balance) {
-            throw runtime_error("Ошибка: недостаточно средств на счете!");
-        }
-        balance -= amount;
-        cout << "Снято " << amount << " руб. Новый баланс: " << balance << endl;
+    double rectangleArea(double width, double height) {
+        return width * height;
     }
 
-    // Геттер для баланса (для отладки)
-    double getBalance() const { return balance; }
-    string getOwnerName() const { return ownerName; }
-};
+    namespace Shapes {
+        class Circle {
+        private:
+            double radius;
+        public:
+            Circle(double r) : radius(r) {}
+            double area() const {
+                return Geometry::circleArea(radius);
+            }
+        };
+    }
+}
 
 // ЗАДАНИЕ 2
-// Собственное исключение для деления на ноль
-class DivisionByZeroException : public exception {
-public:
-    const char* what() const noexcept override {
-        return "Ошибка: деление на ноль!";
-    }
-};
+namespace Logger {
+    enum LogLevel { INFO, WARNING, ERROR };
 
-class SafeDivision {
-public:
-    // Статический метод деления
-    static double divide(double a, double b) {
-        if (b == 0.0) {
-            throw DivisionByZeroException();
+    void log(LogLevel level, const string& message) {
+        switch (level) {
+        case INFO:    cout << "[INFO] "; break;
+        case WARNING: cout << "[WARNING] "; break;
+        case ERROR:   cout << "[ERROR] "; break;
         }
-        return a / b;
+        cout << message << endl;
     }
-};
+
+    namespace FileLogger {
+        void logToFile(const string& filename, const string& message) {
+            ofstream file(filename, ios::app);
+            if (file.is_open()) {
+                file << message << endl;
+                file.close();
+            }
+            else {
+                cerr << "Не удалось открыть файл: " << filename << endl;
+            }
+        }
+    }
+}
 
 int main() {
-    setlocale(LC_ALL, "rus");
+    setlocale(LC_ALL, "ru");
 
-    cout << "========== ЗАДАНИЕ 1: BankAccount ==========\n";
+    cout << "========== ЗАДАНИЕ 1 ==========\n";
 
-    // Создание счета с отрицательным балансом (выбросит исключение)
-    try {
-        BankAccount acc1("Иван", -100);
-    }
-    catch (const invalid_argument& e) {
-        cout << "Исключение при создании счета: " << e.what() << endl;
-    }
+    // 1. Полная квалификация
+    cout << "Площадь круга (радиус 5): " << Geometry::circleArea(5) << endl;
+    cout << "Площадь прямоугольника (4x6): " << Geometry::rectangleArea(4, 6) << endl;
 
-    // Корректное создание счета
-    BankAccount acc2("Петр", 500);
-    cout << "Счет " << acc2.getOwnerName() << " создан. Баланс: " << acc2.getBalance() << endl;
+    // 2. Using-объявление для одной функции
+    using Geometry::rectangleArea;
+    cout << "Площадь прямоугольника (через using): " << rectangleArea(3, 7) << endl;
 
-    // Попытка снять отрицательную сумму
-    try {
-        acc2.withdraw(-50);
-    }
-    catch (const invalid_argument& e) {
-        cout << "Исключение при снятии: " << e.what() << endl;
-    }
+    // 3. Использование вложенного класса
+    Geometry::Shapes::Circle c(3);
+    cout << "Площадь круга через класс Circle: " << c.area() << endl;
 
-    // Попытка снять больше, чем есть
-    try {
-        acc2.withdraw(1000);
-    }
-    catch (const runtime_error& e) {
-        cout << "Исключение при снятии: " << e.what() << endl;
-    }
+    using namespace Geometry;
+    cout << "Ещё одна площадь круга (через using namespace): " << circleArea(2) << endl;
 
-    // Корректное снятие
-    try {
-        acc2.withdraw(200);
-    }
-    catch (const exception& e) {
-        cout << "Неожиданное исключение: " << e.what() << endl;
-    }
+    cout << "\n========== ЗАДАНИЕ 2 ==========\n";
 
-    cout << "\n========== ЗАДАНИЕ 2: SafeDivision ==========\n";
+    using namespace Logger;
 
-    // Деление на ноль
-    try {
-        double result = SafeDivision::divide(10, 0);
-        cout << "Результат: " << result << endl;
-    }
-    catch (const DivisionByZeroException& e) {
-        cout << "Перехвачено DivisionByZeroException: " << e.what() << endl;
-    }
+    log(INFO, "Программа запущена");
+    log(WARNING, "Баланс на исходе");
+    log(ERROR, "Критическая ошибка");
 
-    // Корректное деление
-    try {
-        double result = SafeDivision::divide(10, 2);
-        cout << "10 / 2 = " << result << endl;
-    }
-    catch (const DivisionByZeroException& e) {
-        cout << e.what() << endl;
-    }
-
-    // Деление с дробными числами
-    try {
-        double result = SafeDivision::divide(7.5, 2.5);
-        cout << "7.5 / 2.5 = " << result << endl;
-    }
-    catch (const DivisionByZeroException& e) {
-        cout << e.what() << endl;
-    }
+    // Вызов функции из вложенного пространства
+    FileLogger::logToFile("log.txt", "Это сообщение записано в файл");
+    cout << "Сообщение записано в файл log.txt" << endl;
 
     return 0;
 }
